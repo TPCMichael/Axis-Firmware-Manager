@@ -279,5 +279,13 @@ namespace AxisFirmwareUpgradeApp
             progressForm.Close();
             MessageBox.Show("Firmware upgrade process complete.");
         }
+
+        private void btnAbout_Click(object sender, EventArgs e)
+        {
+            using (AboutForm aboutForm = new AboutForm())
+            {
+                aboutForm.ShowDialog();
+            }
+        }
     }
 }

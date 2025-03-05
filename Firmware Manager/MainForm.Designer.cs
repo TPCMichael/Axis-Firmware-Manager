@@ -1,4 +1,6 @@
-﻿namespace AxisFirmwareUpgradeApp
+﻿using Firmware_Manager;
+
+namespace AxisFirmwareUpgradeApp
 {
     partial class MainForm
     {
@@ -29,6 +31,8 @@
             btnUpgradeFirmware = new Button();
             lblStats = new Label();
             btnSettings = new Button();
+            btnAbout = new Button();
+            lblDisclaimer = new LinkLabel();
             ((System.ComponentModel.ISupportInitialize)dgvDevices).BeginInit();
             SuspendLayout();
             // 
@@ -82,7 +86,7 @@
             // 
             // btnSettings
             // 
-            btnSettings.Location = new Point(772, 12);
+            btnSettings.Location = new Point(1122, 12);
             btnSettings.Name = "btnSettings";
             btnSettings.Size = new Size(100, 23);
             btnSettings.TabIndex = 5;
@@ -90,9 +94,34 @@
             btnSettings.UseVisualStyleBackColor = true;
             btnSettings.Click += btnSettings_Click;
             // 
+            // btnAbout
+            // 
+            btnAbout.Location = new Point(1016, 12);
+            btnAbout.Name = "btnAbout";
+            btnAbout.Size = new Size(100, 23);
+            btnAbout.TabIndex = 6;
+            btnAbout.Text = "About";
+            btnAbout.UseVisualStyleBackColor = true;
+            btnAbout.Click += btnAbout_Click;
+            // 
+            // lblDisclaimer
+            // 
+            lblDisclaimer.AutoSize = true;
+            lblDisclaimer.LinkArea = new LinkArea(110, 19);
+            lblDisclaimer.Location = new Point(224, 351);
+            lblDisclaimer.Name = "lblDisclaimer";
+            lblDisclaimer.Size = new Size(716, 21);
+            lblDisclaimer.TabIndex = 7;
+            lblDisclaimer.TabStop = true;
+            lblDisclaimer.Text = "This software is not officially endorsed or supported by Axis Communications. Use at your own risk or explore Axis Device Manager";
+            lblDisclaimer.UseCompatibleTextRendering = true;
+            lblDisclaimer.LinkClicked += lblDeviceManager_LinkClicked;
+            // 
             // MainForm
             // 
             ClientSize = new Size(1234, 381);
+            Controls.Add(lblDisclaimer);
+            Controls.Add(btnAbout);
             Controls.Add(btnSettings);
             Controls.Add(lblStats);
             Controls.Add(btnUpgradeFirmware);
@@ -108,5 +137,18 @@
         #endregion
 
         private Button btnSettings;
+        private Button btnAbout;
+        private LinkLabel lblDisclaimer;
+
+        private void lblDeviceManager_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            // Use ProcessStartInfo with UseShellExecute for .NET Core/.NET 5+.
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "https://www.axis.com/support/tools/axis-device-manager",
+                UseShellExecute = true
+            };
+            System.Diagnostics.Process.Start(psi);
+        }
     }
 }
