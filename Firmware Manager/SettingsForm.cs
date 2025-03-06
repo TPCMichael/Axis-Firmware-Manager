@@ -8,9 +8,9 @@ namespace AxisFirmwareUpgradeApp
         public SettingsForm()
         {
             InitializeComponent();
-            // Initialize controls from stored settings.
             txtFirmwareFolder.Text = Program.FirmwareFolder;
             chkWaitForFirmwareUpdate.Checked = Program.WaitForFirmwareUpdate;
+            chkWaitUntilReboot.Checked = Program.WaitUntilReboot; // New checkbox
         }
 
         private void btnBrowse_Click(object sender, EventArgs e)
@@ -28,6 +28,7 @@ namespace AxisFirmwareUpgradeApp
         {
             Program.FirmwareFolder = txtFirmwareFolder.Text.Trim();
             Program.WaitForFirmwareUpdate = chkWaitForFirmwareUpdate.Checked;
+            Program.WaitUntilReboot = chkWaitUntilReboot.Checked; // Save new setting
             this.DialogResult = DialogResult.OK;
             this.Close();
         }

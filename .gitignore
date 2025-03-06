@@ -398,3 +398,8 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Data Templates. There should only be the template file here; 
+# ignore all other files just in case someone accidentally exposes camera info
+/Data/*
+!/Data/Cameras_Template.csv

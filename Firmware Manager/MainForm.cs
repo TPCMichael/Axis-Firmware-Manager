@@ -287,5 +287,22 @@ namespace AxisFirmwareUpgradeApp
                 aboutForm.ShowDialog();
             }
         }
+
+        private async void btnReboot_Click(object sender, EventArgs e)
+        {
+            // Optionally, filter the list if needed (e.g. only reboot online devices).
+            var devicesToReboot = devices.Where(d => d.Status == "Online").ToList();
+
+            foreach (var device in devicesToReboot)
+            {
+                // Log starting reboot for the device.
+                // You can also update the device list UI if desired.
+                string result = await device.Reboot();
+                // Log the result into the device’s TargetFirmware field or a dedicated log.
+                device.TargetFirmware = result;
+                RefreshDeviceList();
+            }
+            MessageBox.Show("Reboot process complete for applicable devices.");
+        }
     }
 }

@@ -31,6 +31,16 @@ namespace AxisFirmwareUpgradeApp
             }
         }
 
+        public static bool WaitUntilReboot
+        {
+            get => Settings.Default.WaitUntilReboot;
+            set
+            {
+                Settings.Default.WaitUntilReboot = value;
+                Settings.Default.Save();
+            }
+        }
+
         [STAThread]
         static void Main()
         {

@@ -33,6 +33,7 @@ namespace AxisFirmwareUpgradeApp
             btnSettings = new Button();
             btnAbout = new Button();
             lblDisclaimer = new LinkLabel();
+            btnReboot = new Button();
             ((System.ComponentModel.ISupportInitialize)dgvDevices).BeginInit();
             SuspendLayout();
             // 
@@ -117,9 +118,20 @@ namespace AxisFirmwareUpgradeApp
             lblDisclaimer.UseCompatibleTextRendering = true;
             lblDisclaimer.LinkClicked += lblDeviceManager_LinkClicked;
             // 
+            // btnReboot
+            // 
+            btnReboot.Location = new Point(350, 12);
+            btnReboot.Name = "btnReboot";
+            btnReboot.Size = new Size(120, 23);
+            btnReboot.TabIndex = 8;
+            btnReboot.Text = "Reboot Devices";
+            btnReboot.UseVisualStyleBackColor = true;
+            btnReboot.Click += btnReboot_Click;
+            // 
             // MainForm
             // 
             ClientSize = new Size(1234, 381);
+            Controls.Add(btnReboot);
             Controls.Add(lblDisclaimer);
             Controls.Add(btnAbout);
             Controls.Add(btnSettings);
@@ -150,5 +162,7 @@ namespace AxisFirmwareUpgradeApp
             };
             System.Diagnostics.Process.Start(psi);
         }
+
+        private Button btnReboot;
     }
 }

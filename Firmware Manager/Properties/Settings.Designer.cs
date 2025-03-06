@@ -46,5 +46,17 @@ namespace Firmware_Manager.Properties {
                 this["WaitForFirmwareUpdate"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool WaitUntilReboot {
+            get {
+                return ((bool)(this["WaitUntilReboot"]));
+            }
+            set {
+                this["WaitUntilReboot"] = value;
+            }
+        }
     }
 }

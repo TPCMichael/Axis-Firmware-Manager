@@ -27,85 +27,110 @@
 
         private void InitializeComponent()
         {
-            this.lblFirmwareFolder = new System.Windows.Forms.Label();
-            this.txtFirmwareFolder = new System.Windows.Forms.TextBox();
-            this.btnBrowse = new System.Windows.Forms.Button();
-            this.lblWaitForFirmware = new System.Windows.Forms.Label();
-            this.chkWaitForFirmwareUpdate = new System.Windows.Forms.CheckBox();
-            this.btnSave = new System.Windows.Forms.Button();
-            this.SuspendLayout();
+            lblFirmwareFolder = new Label();
+            txtFirmwareFolder = new TextBox();
+            btnBrowse = new Button();
+            lblWaitForFirmware = new Label();
+            chkWaitForFirmwareUpdate = new CheckBox();
+            btnSave = new Button();
+            chkWaitUntilReboot = new CheckBox();
+            label1 = new Label();
+            SuspendLayout();
             // 
             // lblFirmwareFolder
             // 
-            this.lblFirmwareFolder.AutoSize = true;
-            this.lblFirmwareFolder.Location = new System.Drawing.Point(12, 15);
-            this.lblFirmwareFolder.Name = "lblFirmwareFolder";
-            this.lblFirmwareFolder.Size = new System.Drawing.Size(95, 15);
-            this.lblFirmwareFolder.TabIndex = 0;
-            this.lblFirmwareFolder.Text = "Firmware Folder:";
+            lblFirmwareFolder.AutoSize = true;
+            lblFirmwareFolder.Location = new Point(12, 15);
+            lblFirmwareFolder.Name = "lblFirmwareFolder";
+            lblFirmwareFolder.Size = new Size(95, 15);
+            lblFirmwareFolder.TabIndex = 0;
+            lblFirmwareFolder.Text = "Firmware Folder:";
             // 
             // txtFirmwareFolder
             // 
-            this.txtFirmwareFolder.Location = new System.Drawing.Point(113, 12);
-            this.txtFirmwareFolder.Name = "txtFirmwareFolder";
-            this.txtFirmwareFolder.Size = new System.Drawing.Size(300, 23);
-            this.txtFirmwareFolder.TabIndex = 1;
+            txtFirmwareFolder.Location = new Point(113, 12);
+            txtFirmwareFolder.Name = "txtFirmwareFolder";
+            txtFirmwareFolder.Size = new Size(300, 23);
+            txtFirmwareFolder.TabIndex = 1;
             // 
             // btnBrowse
             // 
-            this.btnBrowse.Location = new System.Drawing.Point(419, 11);
-            this.btnBrowse.Name = "btnBrowse";
-            this.btnBrowse.Size = new System.Drawing.Size(75, 25);
-            this.btnBrowse.TabIndex = 2;
-            this.btnBrowse.Text = "Browse...";
-            this.btnBrowse.UseVisualStyleBackColor = true;
-            this.btnBrowse.Click += new System.EventHandler(this.btnBrowse_Click);
+            btnBrowse.Location = new Point(419, 11);
+            btnBrowse.Name = "btnBrowse";
+            btnBrowse.Size = new Size(75, 25);
+            btnBrowse.TabIndex = 2;
+            btnBrowse.Text = "Browse...";
+            btnBrowse.UseVisualStyleBackColor = true;
+            btnBrowse.Click += btnBrowse_Click;
             // 
             // lblWaitForFirmware
             // 
-            this.lblWaitForFirmware.AutoSize = true;
-            this.lblWaitForFirmware.Location = new System.Drawing.Point(12, 50);
-            this.lblWaitForFirmware.Name = "lblWaitForFirmware";
-            this.lblWaitForFirmware.Size = new System.Drawing.Size(183, 15);
-            this.lblWaitForFirmware.TabIndex = 3;
-            this.lblWaitForFirmware.Text = "Wait for device to update firmware:";
+            lblWaitForFirmware.AutoSize = true;
+            lblWaitForFirmware.Location = new Point(12, 50);
+            lblWaitForFirmware.Name = "lblWaitForFirmware";
+            lblWaitForFirmware.Size = new Size(193, 15);
+            lblWaitForFirmware.TabIndex = 3;
+            lblWaitForFirmware.Text = "Wait for device to update firmware:";
             // 
             // chkWaitForFirmwareUpdate
             // 
-            this.chkWaitForFirmwareUpdate.AutoSize = true;
-            this.chkWaitForFirmwareUpdate.Location = new System.Drawing.Point(201, 50);
-            this.chkWaitForFirmwareUpdate.Name = "chkWaitForFirmwareUpdate";
-            this.chkWaitForFirmwareUpdate.Size = new System.Drawing.Size(15, 14);
-            this.chkWaitForFirmwareUpdate.TabIndex = 4;
-            this.chkWaitForFirmwareUpdate.UseVisualStyleBackColor = true;
+            chkWaitForFirmwareUpdate.AutoSize = true;
+            chkWaitForFirmwareUpdate.Location = new Point(201, 50);
+            chkWaitForFirmwareUpdate.Name = "chkWaitForFirmwareUpdate";
+            chkWaitForFirmwareUpdate.Size = new Size(15, 14);
+            chkWaitForFirmwareUpdate.TabIndex = 4;
+            chkWaitForFirmwareUpdate.UseVisualStyleBackColor = true;
             // 
             // btnSave
             // 
-            this.btnSave.Location = new System.Drawing.Point(419, 80);
-            this.btnSave.Name = "btnSave";
-            this.btnSave.Size = new System.Drawing.Size(75, 25);
-            this.btnSave.TabIndex = 5;
-            this.btnSave.Text = "Save";
-            this.btnSave.UseVisualStyleBackColor = true;
-            this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
+            btnSave.Location = new Point(419, 80);
+            btnSave.Name = "btnSave";
+            btnSave.Size = new Size(75, 25);
+            btnSave.TabIndex = 5;
+            btnSave.Text = "Save";
+            btnSave.UseVisualStyleBackColor = true;
+            btnSave.Click += btnSave_Click;
+            // 
+            // chkWaitUntilReboot
+            // 
+            chkWaitUntilReboot.AutoSize = true;
+            chkWaitUntilReboot.Location = new Point(231, 81);
+            chkWaitUntilReboot.Name = "chkWaitUntilReboot";
+            chkWaitUntilReboot.Size = new Size(15, 14);
+            chkWaitUntilReboot.TabIndex = 7;
+            chkWaitUntilReboot.UseVisualStyleBackColor = true;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(12, 80);
+            label1.Name = "label1";
+            label1.Size = new Size(213, 15);
+            label1.TabIndex = 6;
+            label1.Text = "Wait for device to be ready after reboot";
             // 
             // SettingsForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(506, 117);
-            this.Controls.Add(this.btnSave);
-            this.Controls.Add(this.chkWaitForFirmwareUpdate);
-            this.Controls.Add(this.lblWaitForFirmware);
-            this.Controls.Add(this.btnBrowse);
-            this.Controls.Add(this.txtFirmwareFolder);
-            this.Controls.Add(this.lblFirmwareFolder);
-            this.Name = "SettingsForm";
-            this.Text = "Settings";
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(506, 117);
+            Controls.Add(chkWaitUntilReboot);
+            Controls.Add(label1);
+            Controls.Add(btnSave);
+            Controls.Add(chkWaitForFirmwareUpdate);
+            Controls.Add(lblWaitForFirmware);
+            Controls.Add(btnBrowse);
+            Controls.Add(txtFirmwareFolder);
+            Controls.Add(lblFirmwareFolder);
+            Name = "SettingsForm";
+            Text = "Settings";
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
+
+        private CheckBox chkWaitUntilReboot;
+        private Label label1;
     }
 }

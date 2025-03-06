@@ -425,5 +425,109 @@ namespace AxisFirmwareUpgradeApp
                 return "Firmware upload failed: " + ex.Message;
             }
         }
+
+        public async Task<string> Reboot()
+        {
+            // Build the reboot endpoint URL.
+            string uri = $"{GetConnectionInfo()}axis-cgi/firmwaremanagement.cgi";
+
+            // Create the JSON payload for reboot.
+            string jsonData = @"{
+        ""apiVersion"": ""1.0"",
+        ""method"": ""reboot""
+    }";
+
+            // Set up a new HTTP client with digest authentication.
+            var credCache = new CredentialCache();
+            credCache.Add(new Uri(GetConnectionInfo()), "Digest", new NetworkCredential(Username, Password));
+            var httpClient = new HttpClient(new HttpClientHandler { Credentials = credCache });
+            httpClient.Timeout = TimeSpan.FromMinutes(1); // Adjust as needed.
+
+            try
+            {
+                var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
+                HttpResponseMessage response = await httpClient.PostAsync(new Uri(uri), content);
+                string responseString = await response.Content.ReadAsStringAsync();
+
+                // (Optional) Log the response or check for errors.
+                using (JsonDocument doc = JsonDocument.Parse(responseString))
+                {
+                    JsonElement root = doc.RootElement;
+                    if (root.TryGetProperty("error", out JsonElement errorElement))
+                    {
+                        int errorCode = errorElement.GetProperty("code").GetInt32();
+                        string errorMessage = errorElement.GetProperty("message").GetString();
+                        return $"Reboot error. Code: {errorCode}, Message: {errorMessage}";
+                    }
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                return "Reboot request timed out.";
+            }
+            catch (HttpRequestException ex)
+            {
+                return "Reboot request failed: " + ex.Message;
+            }
+
+            // Now decide whether to wait until the device is fully rebooted.
+            if (Program.WaitUntilReboot)
+            {
+                // Wait until the device is back and the systemready endpoint reports "yes".
+                string sysUri = $"{GetConnectionInfo()}axis-cgi/systemready.cgi";
+                string sysJson = @"{
+            ""apiVersion"": ""1.0"",
+            ""method"": ""systemready"",
+            ""params"": { ""timeout"": 1 }
+        }";
+
+                DateTime startTime = DateTime.Now;
+                bool ready = false;
+                while ((DateTime.Now - startTime) < TimeSpan.FromMinutes(10))
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(10));
+                    try
+                    {
+                        HttpResponseMessage sysResponse = await httpClient.PostAsync(new Uri(sysUri), new StringContent(sysJson, Encoding.UTF8, "application/json"));
+                        string sysResponseString = await sysResponse.Content.ReadAsStringAsync();
+                        using (JsonDocument doc = JsonDocument.Parse(sysResponseString))
+                        {
+                            JsonElement root = doc.RootElement;
+                            if (root.TryGetProperty("data", out JsonElement dataElement) &&
+                                dataElement.TryGetProperty("systemready", out JsonElement readyElement))
+                            {
+                                if (readyElement.GetString().Equals("yes", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    ready = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    catch { /* Ignore temporary failures */ }
+                }
+                return ready
+                    ? "Device rebooted successfully and is ready."
+                    : "Reboot initiated, but systemready check timed out.";
+            }
+            else
+            {
+                // Otherwise, simply poll using Poke() until the device becomes reachable.
+                DateTime startTime = DateTime.Now;
+                bool reachable = false;
+                while ((DateTime.Now - startTime) < TimeSpan.FromMinutes(5))
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(10));
+                    if (await Poke(TimeSpan.FromSeconds(5)))
+                    {
+                        reachable = true;
+                        break;
+                    }
+                }
+                return reachable
+                    ? "Device reboot initiated and is now reachable."
+                    : "Reboot initiated, but device is not reachable after timeout.";
+            }
+        }
     }
 }
