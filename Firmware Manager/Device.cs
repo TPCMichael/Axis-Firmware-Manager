@@ -6,6 +6,8 @@ using System.Net;
 using System.Reflection;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Xml;
+using Firmware_Manager;
 
 namespace AxisFirmwareUpgradeApp
 {
@@ -23,7 +25,9 @@ namespace AxisFirmwareUpgradeApp
 
         public string Firmware { get; set; }
         public string TargetFirmware { get; set; }
-
+        public string VmdStatus { get; set; }
+        public string ObjectAnalyticsStatus { get; set; }
+        public string Uptime { get; set; }
 
         public Device(string sname, string dname, string host, string port, string user, string pass)
         {
@@ -425,5 +429,161 @@ namespace AxisFirmwareUpgradeApp
                 return "Firmware upload failed: " + ex.Message;
             }
         }
+
+        public async Task<(bool isReady, string uptimeFormatted)> CheckSystemReady()
+        {
+            string uri = $"{GetConnectionInfo()}axis-cgi/systemready.cgi";
+            string payload = @"{
+        ""apiVersion"": ""1.0"",
+        ""method"": ""systemready"",
+        ""params"": { ""timeout"": 1 }
+    }";
+
+            var credCache = new CredentialCache();
+            credCache.Add(new Uri(GetConnectionInfo()), "Digest", new NetworkCredential(Username, Password));
+            var httpClient = new HttpClient(new HttpClientHandler { Credentials = credCache });
+            httpClient.Timeout = TimeSpan.FromSeconds(10);
+
+            try
+            {
+                var content = new StringContent(payload, Encoding.UTF8, "application/json");
+                HttpResponseMessage response = await httpClient.PostAsync(new Uri(uri), content);
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"Systemready error: HTTP {response.StatusCode}");
+                    return (false, "");
+                }
+
+                // Read the response as a byte array and decode it properly.
+                byte[] bytes = await response.Content.ReadAsByteArrayAsync();
+                var charset = response.Content.Headers.ContentType?.CharSet;
+                if (!string.IsNullOrWhiteSpace(charset) && charset.Equals("utf8", StringComparison.OrdinalIgnoreCase))
+                {
+                    charset = "utf-8";
+                }
+                Encoding encoding;
+                try
+                {
+                    encoding = !string.IsNullOrWhiteSpace(charset) ? Encoding.GetEncoding(charset) : Encoding.UTF8;
+                }
+                catch
+                {
+                    encoding = Encoding.UTF8;
+                }
+                string jsonResponse = encoding.GetString(bytes);
+
+                using (JsonDocument doc = JsonDocument.Parse(jsonResponse))
+                {
+                    JsonElement root = doc.RootElement;
+                    if (root.TryGetProperty("data", out JsonElement dataElement))
+                    {
+                        // Read the 'systemready' flag.
+                        string systemReady = dataElement.GetProperty("systemready").GetString();
+                        // Read the uptime (in seconds) as a string.
+                        string uptimeStr = dataElement.GetProperty("uptime").GetString();
+                        long uptimeSeconds = 0;
+                        if (!long.TryParse(uptimeStr, out uptimeSeconds))
+                        {
+                            uptimeSeconds = 0;
+                        }
+                        string formattedUptime = uptimeSeconds.ToHumanReadableTime();
+                        // Update the device property.
+                        this.Uptime = formattedUptime;
+                        bool isReady = systemReady.Equals("yes", StringComparison.OrdinalIgnoreCase);
+                        return (isReady, formattedUptime);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("CheckSystemReady exception: " + ex.Message);
+            }
+            return (false, "");
+        }
+
+
+        /// <summary>
+        /// Checks whether certain critical applications are running on the device.
+        /// Logs a message via the supplied callback for any app that is not running.
+        /// </summary>
+        /// <param name="logCallback">A callback to log messages (e.g. an action that writes to a log window or console).</param>
+        public async Task CheckApplications(Action<string> logCallback)
+        {
+            // Build the endpoint URL for applications/list.cgi.
+            string uri = $"{GetConnectionInfo()}axis-cgi/applications/list.cgi";
+
+            var credCache = new CredentialCache();
+            credCache.Add(new Uri(GetConnectionInfo()), "Digest", new NetworkCredential(Username, Password));
+            var httpClient = new HttpClient(new HttpClientHandler { Credentials = credCache });
+            httpClient.Timeout = TimeSpan.FromSeconds(30);
+
+            try
+            {
+                HttpResponseMessage response = await httpClient.GetAsync(new Uri(uri));
+                if (!response.IsSuccessStatusCode)
+                {
+                    logCallback?.Invoke($"CheckApplications: HTTP error {response.StatusCode}");
+                    return;
+                }
+
+                string responseString = await response.Content.ReadAsStringAsync();
+
+                // Parse the XML response.
+                XmlDocument xmlDoc = new XmlDocument();
+                xmlDoc.LoadXml(responseString);
+                XmlNodeList appNodes = xmlDoc.GetElementsByTagName("application");
+
+                // Reset previous statuses.
+                this.VmdStatus = "Unknown";
+                this.ObjectAnalyticsStatus = "Unknown";
+
+                foreach (XmlNode node in appNodes)
+                {
+                    if (node.Attributes == null)
+                        continue;
+
+                    string appName = node.Attributes["Name"]?.Value ?? "";
+                    string appID = node.Attributes["ApplicationID"]?.Value ?? "";
+                    string appStatus = node.Attributes["Status"]?.Value ?? "";
+
+                    // Check object analytics: expecting Name "objectanalytics" with ID "412806"
+                    if (appName.Equals("objectanalytics", StringComparison.OrdinalIgnoreCase) && appID == "412806")
+                    {
+                        if (!appStatus.Equals("Running", StringComparison.OrdinalIgnoreCase))
+                        {
+                            await ToggleAnalytics(appName, true);
+                            ObjectAnalyticsStatus = "Restarted";
+                            logCallback?.Invoke($"Warning: objectanalytics (ID: 412806) not running (Status: {appStatus}). Restarted.");
+                        }
+                        else
+                        {
+                            ObjectAnalyticsStatus = "Running";
+                            logCallback?.Invoke("objectanalytics is running.");
+                        }
+                    }
+
+                    // Check vmd: expecting Name "vmd" with ID "143440"
+                    if (appName.Equals("vmd", StringComparison.OrdinalIgnoreCase) && appID == "143440")
+                    {
+                        if (!appStatus.Equals("Running", StringComparison.OrdinalIgnoreCase))
+                        {
+                            await ToggleAnalytics(appName, true);
+                            VmdStatus = "Restarted";
+                            logCallback?.Invoke($"Warning: vmd (ID: 143440) not running (Status: {appStatus}). Restarted.");
+                        }
+                        else
+                        {
+                            VmdStatus = "Running";
+                            logCallback?.Invoke("vmd is running.");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logCallback?.Invoke("CheckApplications exception: " + ex.Message);
+            }
+        }
+
     }
 }

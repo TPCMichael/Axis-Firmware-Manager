@@ -2,6 +2,7 @@ using Firmware_Manager;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -76,8 +77,6 @@ namespace AxisFirmwareUpgradeApp
         {
             dgvDevices.DataSource = null;
             dgvDevices.DataSource = devices;
-
-            // Auto-size cells.
             dgvDevices.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
 
             // Hide sensitive columns.
@@ -86,15 +85,22 @@ namespace AxisFirmwareUpgradeApp
             if (dgvDevices.Columns["Password"] != null)
                 dgvDevices.Columns["Password"].Visible = false;
 
-            // Move Status and Firmware columns to the front.
+            // Optionally move columns for Status, Firmware, Uptime, VmdStatus, and ObjectAnalyticsStatus.
             if (dgvDevices.Columns["Status"] != null)
                 dgvDevices.Columns["Status"].DisplayIndex = 0;
             if (dgvDevices.Columns["Firmware"] != null)
                 dgvDevices.Columns["Firmware"].DisplayIndex = 1;
+            if (dgvDevices.Columns["Uptime"] != null)
+                dgvDevices.Columns["Uptime"].DisplayIndex = 2;
+            if (dgvDevices.Columns["VmdStatus"] != null)
+                dgvDevices.Columns["VmdStatus"].DisplayIndex = 3;
+            if (dgvDevices.Columns["ObjectAnalyticsStatus"] != null)
+                dgvDevices.Columns["ObjectAnalyticsStatus"].DisplayIndex = 4;
 
-            // Apply color coding to the Status column.
+            // Color-code columns.
             foreach (DataGridViewRow row in dgvDevices.Rows)
             {
+                // For Status
                 var statusCell = row.Cells["Status"];
                 if (statusCell.Value != null)
                 {
@@ -105,6 +111,33 @@ namespace AxisFirmwareUpgradeApp
                         statusCell.Style.BackColor = Color.LightCoral;
                     else
                         statusCell.Style.BackColor = Color.LightYellow;
+                }
+
+                // For VmdStatus
+                var vmdCell = row.Cells["VmdStatus"];
+                if (vmdCell.Value != null)
+                {
+                    string vmdStatus = vmdCell.Value.ToString();
+                    // If restarted, use Yellow; if Running, use LightGreen; otherwise, use LightCoral.
+                    if (vmdStatus.Equals("Restarted", StringComparison.OrdinalIgnoreCase))
+                        vmdCell.Style.BackColor = Color.Yellow;
+                    else if (vmdStatus.Equals("Running", StringComparison.OrdinalIgnoreCase))
+                        vmdCell.Style.BackColor = Color.LightGreen;
+                    else
+                        vmdCell.Style.BackColor = Color.LightCoral;
+                }
+
+                // For ObjectAnalyticsStatus
+                var oaCell = row.Cells["ObjectAnalyticsStatus"];
+                if (oaCell.Value != null)
+                {
+                    string oaStatus = oaCell.Value.ToString();
+                    if (oaStatus.Equals("Restarted", StringComparison.OrdinalIgnoreCase))
+                        oaCell.Style.BackColor = Color.Yellow;
+                    else if (oaStatus.Equals("Running", StringComparison.OrdinalIgnoreCase))
+                        oaCell.Style.BackColor = Color.LightGreen;
+                    else
+                        oaCell.Style.BackColor = Color.LightCoral;
                 }
             }
 
@@ -134,38 +167,77 @@ namespace AxisFirmwareUpgradeApp
         // Button event to check if devices are online and determine firmware update availability.
         private async void btnCheckOnline_Click(object sender, EventArgs e)
         {
-            // Create a modal progress window for checking devices.
+            // Create and show the modal device-check progress window.
             DeviceCheckProgressForm checkForm = new DeviceCheckProgressForm();
-            this.Enabled = false;
+            this.Enabled = false;  // Disable the main form so the modal takes focus.
             checkForm.Show();
 
-            int total = devices.Count;
+            int totalDevices = devices.Count;
             int processed = 0;
+
             foreach (var device in devices)
             {
-                bool online = await device.Poke(TimeSpan.FromSeconds(5));
-                if (online)
+                checkForm.AppendLog($"Checking device: {device.DeviceName}");
+
+                // Call the system ready endpoint to check if the device is online and get uptime.
+                var (isReady, uptimeFormatted) = await device.CheckSystemReady();
+                if (isReady)
                 {
                     device.Status = "Online";
+                    device.Uptime = uptimeFormatted;
                     device.DeviceModel = await device.GetDeviceProperty("ProdNbr");
                     device.Firmware = await device.GetDeviceProperty("Version");
                     device.TargetFirmware = GetTargetFirmwareForDevice(device);
+                    checkForm.AppendLog($"{device.DeviceName} is online. Uptime: {uptimeFormatted}");
                 }
                 else
                 {
                     device.Status = "Offline";
+                    device.Uptime = "";
                     device.DeviceModel = "";
                     device.Firmware = "";
                     device.TargetFirmware = "";
+                    checkForm.AppendLog($"{device.DeviceName} is offline.");
                 }
                 processed++;
-                checkForm.UpdateProgress(processed, total, $"Checked {processed} of {total} devices.");
+                checkForm.UpdateProgress(processed, totalDevices, $"Checked {processed} of {totalDevices} devices.");
                 RefreshDeviceList();
             }
 
             checkForm.AppendLog("Device online check complete.");
             checkForm.Close();
-            this.Enabled = true;
+            this.Enabled = true; // Re-enable the main form.
+        }
+
+        private async void btnCheckApps_Click(object sender, EventArgs e)
+        {
+            // Create and show the modal application check progress window.
+            ApplicationCheckProgressForm progressForm = new ApplicationCheckProgressForm();
+            this.Enabled = false; // disable main form while checking
+            progressForm.Show();
+
+            int totalDevices = devices.Count;
+            int processed = 0;
+
+            foreach (var device in devices)
+            {
+                // Call the device's CheckApplications method.
+                // It will update the device's VmdStatus and ObjectAnalyticsStatus properties.
+                await device.CheckApplications((msg) =>
+                {
+                    progressForm.AppendLog($"Device '{device.DeviceName}': {msg}");
+                    Debug.WriteLine($"Device '{device.DeviceName}': {msg}");
+                });
+
+                processed++;
+                progressForm.UpdateProgress(processed, totalDevices, $"Checked {processed} of {totalDevices} devices.");
+                RefreshDeviceList();
+            }
+
+            progressForm.AppendLog("Application check complete.");
+            progressForm.Close();
+            this.Enabled = true; // re-enable main form
+            MessageBox.Show("Application check complete. See log for details.");
         }
 
         /// <summary>

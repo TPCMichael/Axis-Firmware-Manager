@@ -119,6 +119,19 @@ namespace AxisFirmwareUpgradeApp
             // 
             // MainForm
             // 
+
+            // In MainForm.Designer.cs, within InitializeComponent():
+            btnCheckApps = new System.Windows.Forms.Button();
+            btnCheckApps.Location = new System.Drawing.Point(350, 12);
+            btnCheckApps.Name = "btnCheckApps";
+            btnCheckApps.Size = new System.Drawing.Size(120, 23);
+            btnCheckApps.TabIndex = 6;
+            btnCheckApps.Text = "Check Applications";
+            btnCheckApps.UseVisualStyleBackColor = true;
+            btnCheckApps.Click += new System.EventHandler(this.btnCheckApps_Click);
+            this.Controls.Add(btnCheckApps);
+
+
             ClientSize = new Size(1234, 381);
             Controls.Add(lblDisclaimer);
             Controls.Add(btnAbout);
@@ -139,6 +152,7 @@ namespace AxisFirmwareUpgradeApp
         private Button btnSettings;
         private Button btnAbout;
         private LinkLabel lblDisclaimer;
+        private Button btnCheckApps;
 
         private void lblDeviceManager_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
